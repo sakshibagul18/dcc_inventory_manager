@@ -13,6 +13,7 @@ class DCC_OT_SubmitOperator(bpy.types.Operator):
         obj = context.active_object
         if obj is None:
             self.report({'WARNING'}, "No active object selected!")
+            print("WARNING: No active object selected!")
             return {'CANCELLED'}
 
         # Prepare transform data
@@ -22,15 +23,22 @@ class DCC_OT_SubmitOperator(bpy.types.Operator):
             "scale": list(obj.scale)
         }
 
+        # Print to Blender's Terminal (System Console)
+        log_message = f"Sending transform data: {data}"
+        print(log_message)  # ✅ Log to Blender's console
+
         try:
             # Send POST request to the server
             response = requests.post(url, json=data)
+            print(f"Server Response: {response.status_code}, {response.text}")  # ✅ Log response
+
             if response.status_code == 200:
                 self.report({'INFO'}, "Data sent successfully!")
-                print("Server Response:", response.json())
             else:
                 self.report({'ERROR'}, f"Error: {response.status_code}")
         except Exception as e:
             self.report({'ERROR'}, f"Connection failed: {e}")
-        
+            print(f"ERROR: Connection failed: {e}")  # ✅ Log exception in terminal
+
         return {'FINISHED'}
+

@@ -24,10 +24,13 @@ class TransformData(BaseModel):
 class ItemBase(BaseModel):
     name: str
     quantity: int
+class RemoveItemRequest(BaseModel):
+    name: str 
 
 # 🔹 10-second delay only for transformation endpoints
 @app.post("/transform")
 async def transform(data: TransformData):
+    print(f"Received transform data: {data}")  # Add this
     time.sleep(10)
     logging.info(f"Received transform data: {data}")
     if not any([data.location, data.rotation, data.scale]):
@@ -80,15 +83,20 @@ async def add_item(item: ItemBase, db: Session = Depends(get_db)):
 
 # 🔹 Remove Item from Inventory
 @app.post("/remove-item")
-async def remove_item(item: ItemBase, db: Session = Depends(get_db)):
-    db_item = db.query(Item).filter(Item.name.ilike(item.name)).first()
+async def remove_item(item: RemoveItemRequest, db: Session = Depends(get_db)):
+    item_name = item.name.strip()
+    logging.info(f"Received request to remove: {item_name}")
+
+    db_item = db.query(Item).filter(Item.name.ilike(item_name)).first()
+
     if not db_item:
-        raise HTTPException(status_code=404, detail="Item not found.")
-    
+        raise HTTPException(status_code=404, detail=f"Item '{item_name}' not found in inventory.")
+
     db.delete(db_item)
     db.commit()
-    logging.info(f"Item removed: {item.name}")
-    return {"message": "Item removed successfully"}
+
+    logging.info(f"Item removed: {item_name}")
+    return {"message": f"Item '{item_name}' removed successfully."}
 
 # 🔹 Update Quantity (Purchase/Return)
 @app.post("/update-quantity")
